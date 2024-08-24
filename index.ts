@@ -1,12 +1,32 @@
 import csvToJson from "convert-csv-to-json";
 import fs from "fs";
 import iconv from "iconv-lite";
+import AdmZip from "adm-zip";
 
-let fileInputName = "consulta_cand_2024_MG.csv";
+let fileInputName = "consulta_cand_2024_MG.zip";
 let fileOutputName = "myOutputFile.json";
 
-// Ler o conteúdo do arquivo CSV usando a codificação ISO-8859-1
-let fileContent = fs.readFileSync(fileInputName, { encoding: "binary" });
+// Extrair o arquivo CSV do ZIP
+const zip = new AdmZip(fileInputName);
+const zipEntries = zip.getEntries();
+let csvFileName = null;
+
+// Localizar o arquivo CSV no ZIP
+zipEntries.forEach((entry) => {
+  if (entry.entryName.endsWith(".csv")) {
+    csvFileName = entry.entryName;
+    zip.extractEntryTo(entry, "./", false, true);
+  }
+});
+
+// Verificar se encontramos o arquivo CSV
+if (!csvFileName) {
+  console.error("Nenhum arquivo CSV encontrado no ZIP.");
+  process.exit(1);
+}
+
+// Ler o conteúdo do arquivo CSV extraído usando a codificação ISO-8859-1
+let fileContent = fs.readFileSync(csvFileName, { encoding: "binary" });
 let convertedContent = iconv.decode(
   Buffer.from(fileContent, "binary"),
   "ISO-8859-1"
@@ -40,12 +60,13 @@ jsonArray = jsonArray.map((item) => {
 });
 
 // Filtra os dados para incluir apenas informações sobre Almenara
-let filteredArray = jsonArray.filter(item => item["NM_UE"] === "ALMENARA");
+let filteredArray = jsonArray.filter((item) => item["NM_UE"] === "ALMENARA");
 
 // Salva o JSON filtrado no arquivo de saída
 fs.writeFileSync(fileOutputName, JSON.stringify(filteredArray, null, 2));
 
-// Remove o arquivo temporário após a conversão
+// Remove os arquivos temporários após a conversão
 fs.unlinkSync(tempFileName);
+fs.unlinkSync(csvFileName);
 
 console.log("CSV convertido para JSON com sucesso e filtrado por Almenara!");
