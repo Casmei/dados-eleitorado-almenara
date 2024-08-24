@@ -39,10 +39,13 @@ jsonArray = jsonArray.map((item) => {
   return newItem;
 });
 
-// Salva o JSON no arquivo de saída
-fs.writeFileSync(fileOutputName, JSON.stringify(jsonArray, null, 2));
+// Filtra os dados para incluir apenas informações sobre Almenara
+let filteredArray = jsonArray.filter(item => item["NM_UE"] === "ALMENARA");
+
+// Salva o JSON filtrado no arquivo de saída
+fs.writeFileSync(fileOutputName, JSON.stringify(filteredArray, null, 2));
 
 // Remove o arquivo temporário após a conversão
 fs.unlinkSync(tempFileName);
 
-console.log("CSV convertido para JSON com sucesso!");
+console.log("CSV convertido para JSON com sucesso e filtrado por Almenara!");
